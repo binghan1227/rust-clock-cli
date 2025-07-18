@@ -1,6 +1,6 @@
 use std::{io::{self, Write}};
 
-use crate::clock::{print_clock, test};
+use crate::clock::{print_clock};
 
 mod display;
 mod clock;
