@@ -7,9 +7,6 @@ use clap::Parser;
 use crate::clock;
 use crate::font;
 
-// const CLEAR_ALL: &str = "\x1B[2J";
-// const HIDE: &str = "\x1B[?25l";
-
 #[derive(Clone, Copy, Parser)]
 #[command(version, about, long_about = None)]
 pub struct Config {
@@ -28,6 +25,10 @@ pub struct Config {
     /// The offset of y
     #[arg(short, default_value_t = 0)]
     pub y: u16,
+
+    /// Change to 12-hour clock
+    #[arg(long = "12")]
+    pub use12_hour: bool,
 
     /// Choose the digit's font (0: 5x7, 1: 3x5)
     #[arg(short, long, default_value_t = 0, value_parser = font::font_in_range)]
@@ -98,6 +99,10 @@ pub struct Draw {
 }
 
 const COLON: usize = 10;
+const SPACE: usize = 11;
+const A: usize = 12;
+const P: usize = 13;
+const M: usize = 14;
 
 impl Draw {
     pub fn new(config: Config) -> Self {
@@ -130,38 +135,52 @@ impl Draw {
     */
 
     pub fn show_time(&mut self, time: clock::Time, out: &Stdout) -> io::Result<()> {
-        let d = [
-            time.h / 10,
-            time.h % 10,
-            COLON,
-            time.m / 10,
-            time.m % 10,
-            COLON,
-            time.s / 10,
-            time.s % 10,
-        ];
+        let d = if !self.config.use12_hour {
+            vec![
+                time.h / 10,
+                time.h % 10,
+                COLON,
+                time.m / 10,
+                time.m % 10,
+                COLON,
+                time.s / 10,
+                time.s % 10,
+            ]
+        } else {
+            vec![
+                time.pm_h.1 / 10,
+                time.pm_h.1 % 10,
+                COLON,
+                time.m / 10,
+                time.m % 10,
+                COLON,
+                time.s / 10,
+                time.s % 10,
+                SPACE,
+                if time.pm_h.0 { P } else { A },
+                M,
+            ]
+        };
 
         for y in 0..font::HEIGHT[self.config.font] {
             self.buffer.clear();
-            for digit in d {
+            for digit in &d {
                 let mut mask = 1 << (font::WIDTH[self.config.font] * (y + 1));
                 for _ in 0..font::WIDTH[self.config.font] {
                     mask >>= 1;
                     self.write_buffer(Paint {
-                        color: if mask & font::DIGIT[self.config.font][digit] > 0 {
+                        color: if mask & font::DIGIT[self.config.font][*digit] > 0 {
                             Color::C8(self.config.color)
                         } else {
                             Color::Reset
                         },
                         background: 48,
                     })
-                    .expect("Write Buffer Error");
                 }
                 self.write_buffer(Paint {
                     color: Color::Reset,
                     background: 48,
                 })
-                .expect("Write Buffer Error");
             }
             self.render_buffer(self.config.x, self.config.y + y * self.config.height, out)?;
             // println!("{}", buffer);
@@ -169,13 +188,13 @@ impl Draw {
         Ok(())
     }
 
-    fn write_buffer(&mut self, color: Paint) -> std::fmt::Result {
+    fn write_buffer(&mut self, color: Paint) {
         write!(
             &mut self.buffer,
             "{}{:2$}",
             color, " ", self.config.width as usize
-        )?;
-        Ok(())
+        )
+        .expect("Error while writing into the buffer");
     }
 
     fn render_buffer(&self, x: u16, y: u16, mut out: &Stdout) -> io::Result<()> {
