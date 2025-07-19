@@ -1,3 +1,4 @@
+use crate::{display, font};
 use anyhow::Result;
 use chrono::{DateTime, Duration, Local, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use clap::{ArgGroup, Parser, Subcommand};
@@ -96,13 +97,13 @@ pub fn parse_duration(input: &str) -> Result<Duration> {
     }
 }
 
-#[derive(Subcommand, Debug, Clone, Copy)]
+#[derive(Subcommand, Clone, Copy)]
 pub enum CountdownCommands {
     /// Start a countdown
     Countdown(CountdownArgs),
 }
 
-#[derive(Clone, Copy, Parser, Debug)]
+#[derive(Clone, Copy, Parser)]
 #[command(group(
     ArgGroup::new("countdown")
         .required(true)
@@ -116,4 +117,12 @@ pub struct CountdownArgs {
     /// Countdown to target time (e.g. "2025-07-19 12:00")
     #[arg(short = 't', long, value_parser = parse_target_time)]
     pub target: Option<DateTime<Local>>,
+
+    /// Choose the digit's font (0: 5x7, 1: 3x5)
+    #[arg(short, long, default_value_t = 0, value_parser = font::font_in_range)]
+    pub font: usize,
+
+    /// The tile's color
+    #[arg(short, long, default_value = "3")]
+    pub color: display::Color8,
 }

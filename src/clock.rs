@@ -97,6 +97,7 @@ impl<'a> Clock<'a> {
             self.config.font,
             self.config.color,
         );
+        let mut last_len: usize = 0;
 
         while !stop.load(Ordering::SeqCst) {
             if self.countdown.is_some() {
@@ -105,21 +106,29 @@ impl<'a> Clock<'a> {
                     self.countdown = None;
                     write!(self.out, "{}", CLEAR_ALL)?;
                 }
-                let config = display::DrawConfig::new(
-                    self.config.width,
-                    self.config.height,
-                    w / 2
-                        - ((font::WIDTH[self.config.font] + 1) * self.config.width)
-                            * remaining.len() as u16
-                            / 2,
-                    h / 2
-                        - font::HEIGHT[self.config.font] * self.config.height
-                        - font::HEIGHT[self.config.font] * self.config.height / 2
-                        - 2,
-                    self.config.font,
-                    self.config.color,
-                );
-                d.show_time(&remaining, &config, self.out)?;
+                if remaining.len() != last_len {
+                    last_len = remaining.len();
+                    write!(self.out, "{}", CLEAR_ALL)?;
+                }
+                if let Some(countdown::CountdownCommands::Countdown(countdown_args)) =
+                    self.config.countdown
+                {
+                    let countdown_config = display::DrawConfig::new(
+                        self.config.width,
+                        self.config.height,
+                        w / 2
+                            - ((font::WIDTH[countdown_args.font] + 1) * self.config.width)
+                                * remaining.len() as u16
+                                / 2,
+                        h / 2
+                            - font::HEIGHT[countdown_args.font] * self.config.height
+                            - font::HEIGHT[countdown_args.font] * self.config.height / 2
+                            - 2,
+                        countdown_args.font,
+                        countdown_args.color,
+                    );
+                    d.show_time(&remaining, &countdown_config, self.out)?;
+                }
             }
             let formatted_time = self.time_formatter(Time::now());
             d.show_time(&formatted_time, &config, self.out)?;
