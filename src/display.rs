@@ -22,12 +22,16 @@ pub struct Config {
     pub width: u16,
 
     /// The offset of x
-    #[arg(short, long, default_value_t = 0)]
+    #[arg(short, default_value_t = 0)]
     pub x: u16,
 
     /// The offset of y
-    #[arg(short, long, default_value_t = 0)]
+    #[arg(short, default_value_t = 0)]
     pub y: u16,
+
+    /// Choose the digit's font (0: 5x7, 1: 3x5)
+    #[arg(short, long, default_value_t = 0, value_parser = font::font_in_range)]
+    pub font: usize,
 
     /// The tile's color
     #[arg(short, long, default_value = "3")]
@@ -137,14 +141,14 @@ impl Draw {
             time.s % 10,
         ];
 
-        for y in 0..font::HEIGHT {
+        for y in 0..font::HEIGHT[self.config.font] {
             self.buffer.clear();
             for digit in d {
-                let mut mask = 1 << (font::WIDTH * (y + 1));
-                for _ in 0..font::WIDTH {
+                let mut mask = 1 << (font::WIDTH[self.config.font] * (y + 1));
+                for _ in 0..font::WIDTH[self.config.font] {
                     mask >>= 1;
                     self.write_buffer(Paint {
-                        color: if mask & font::DIGIT[digit] > 0 {
+                        color: if mask & font::DIGIT[self.config.font][digit] > 0 {
                             Color::C8(self.config.color)
                         } else {
                             Color::Reset

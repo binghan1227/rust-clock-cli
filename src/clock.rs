@@ -41,8 +41,8 @@ pub fn print_clock(mut config: display::Config, out: &mut Stdout) -> std::io::Re
     //     color : display::Color8(11),
     // };
 
-    config.x = config.x + w / 2 - ((font::WIDTH + 1) * config.width) * 8 / 2;
-    config.y = config.y + h / 2 - font::HEIGHT * config.height / 2;
+    config.x = config.x + w / 2 - ((font::WIDTH[config.font] + 1) * config.width) * 8 / 2;
+    config.y = config.y + h / 2 - font::HEIGHT[config.font] * config.height / 2;
     let mut d = display::Draw::new(config);
 
     loop {
