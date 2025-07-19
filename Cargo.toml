@@ -3,6 +3,9 @@ name = "rust-clock-cli"
 version = "0.1.0"
 edition = "2024"
 description = "A command line clock written in Rust."
+authors = ["Binghan <binghan1227@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/binghan1227/rust-clock-cli"
 
 [dependencies]
 chrono = "0.4"

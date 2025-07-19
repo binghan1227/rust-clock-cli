@@ -114,8 +114,8 @@ impl<'a> Clock<'a> {
                     self.config.countdown
                 {
                     let countdown_config = display::DrawConfig::new(
-                        self.config.width,
-                        self.config.height,
+                        countdown_args.width,
+                        countdown_args.height,
                         w / 2
                             - ((font::WIDTH[countdown_args.font] + 1) * self.config.width)
                                 * remaining.len() as u16

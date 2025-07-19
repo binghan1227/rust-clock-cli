@@ -1,0 +1,103 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_name: rust-clock-cli-linux
+            asset_name: rust-clock-cli-linux-amd64
+          - os: windows-latest
+            artifact_name: rust-clock-cli-windows.exe
+            asset_name: rust-clock-cli-windows-amd64.exe
+          - os: macos-latest
+            artifact_name: rust-clock-cli-macos
+            asset_name: rust-clock-cli-macos-amd64
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Build binary
+        run: cargo build --release --locked
+
+      - name: Rename binary for Linux and macOS
+        if: matrix.os != 'windows-latest'
+        run: mv target/release/rust-clock-cli ${{ matrix.artifact_name }}
+
+      - name: Rename binary for Windows
+        if: matrix.os == 'windows-latest'
+        run: mv target/release/rust-clock-cli.exe ${{ matrix.artifact_name }}
+
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset (Linux)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/rust-clock-cli-linux/rust-clock-cli-linux
+          asset_name: rust-clock-cli-linux-amd64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Release Asset (Windows)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/rust-clock-cli-windows.exe/rust-clock-cli-windows.exe
+          asset_name: rust-clock-cli-windows-amd64.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload Release Asset (macOS)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/rust-clock-cli-macos/rust-clock-cli-macos
+          asset_name: rust-clock-cli-macos-amd64
+          asset_content_type: application/octet-stream

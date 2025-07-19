@@ -118,11 +118,27 @@ pub struct CountdownArgs {
     #[arg(short = 't', long, value_parser = parse_target_time)]
     pub target: Option<DateTime<Local>>,
 
-    /// Choose the digit's font (0: 5x7, 1: 3x5)
+    /// Height of each digit tile.
+    #[arg(short = 'H', long, default_value_t = 1)]
+    pub height: u16,
+
+    /// Width of each digit tile.
+    #[arg(short = 'W', long, default_value_t = 2)]
+    pub width: u16,
+
+    /// Horizontal offset (x position).
+    #[arg(short, default_value_t = 0)]
+    pub x: u16,
+
+    /// Vertical offset (y position).
+    #[arg(short, default_value_t = 0)]
+    pub y: u16,
+
+    /// Font style for digits (0: 5x7, 1: 3x5).
     #[arg(short, long, default_value_t = 0, value_parser = font::font_in_range)]
     pub font: usize,
 
-    /// The tile's color
+    /// Color of the digit tiles.
     #[arg(short, long, default_value = "3")]
     pub color: display::Color8,
 }
