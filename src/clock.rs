@@ -1,10 +1,16 @@
+use anyhow::Result;
 use chrono::prelude::*;
 use std::io::{Error, Stdout, Write};
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
 use std::thread;
 use std::time::Duration;
 use terminal_size::{Height, Width, terminal_size};
-use std::sync::{atomic::{ AtomicBool, Ordering }, Arc};
 
+use crate::config;
+use crate::countdown;
 use crate::display;
 use crate::font::{self};
 
@@ -32,21 +38,45 @@ impl Time {
 }
 
 pub struct Clock<'a> {
-    config: display::Config,
+    config: config::Config,
+    countdown: Option<countdown::CD>,
     out: &'a mut Stdout,
 }
 
 const CLEAR_ALL: &str = "\x1B[2J";
 const HIDE: &str = "\x1B[?25l";
 const SHOW: &str = "\x1B[?25h";
+const COLON: usize = 10;
+const SPACE: usize = 11;
+const A: usize = 12;
+const P: usize = 13;
+const M: usize = 14;
 
 impl<'a> Clock<'a> {
-    pub fn new(config: display::Config, out: &'a mut Stdout) -> Result<Self, Error> {
+    pub fn new(config: config::Config, out: &'a mut Stdout) -> Result<Self, Error> {
         write!(out, "{}{}", CLEAR_ALL, HIDE)?;
-        Ok(Clock { config, out })
+        let countdown = if let Some(countdown::CountdownCommands::Countdown(countdown_args)) =
+            config.countdown
+        {
+            match (countdown_args.duration, countdown_args.target) {
+                (Some(duration), None) => Some(countdown::CD::new_duration(duration)),
+                (None, Some(target)) => {
+                    let target_utc = target.with_timezone(&Utc);
+                    Some(countdown::CD::new_target(target_utc))
+                }
+                _ => None,
+            }
+        } else {
+            None
+        };
+        Ok(Clock {
+            config,
+            countdown,
+            out,
+        })
     }
 
-    pub fn print_clock(&mut self, stop: &Arc<AtomicBool>) -> std::io::Result<()> {
+    pub fn print_clock(&mut self, stop: &Arc<AtomicBool>) -> Result<()> {
         let term_size = terminal_size();
         let Some((Width(w), Height(h))) = term_size else {
             panic!("Error while getting the terminal's size");
@@ -58,10 +88,41 @@ impl<'a> Clock<'a> {
                 / 2;
         self.config.y =
             self.config.y + h / 2 - font::HEIGHT[self.config.font] * self.config.height / 2;
-        let mut d = display::Draw::new(self.config);
+        let mut d = display::Draw::new();
+        let config = display::DrawConfig::new(
+            self.config.width,
+            self.config.height,
+            self.config.x,
+            self.config.y,
+            self.config.font,
+            self.config.color,
+        );
 
         while !stop.load(Ordering::SeqCst) {
-            d.show_time(Time::now(), self.out)?;
+            if self.countdown.is_some() {
+                let remaining = self.countdown.unwrap().remaining();
+                if remaining.is_empty() {
+                    self.countdown = None;
+                    write!(self.out, "{}", CLEAR_ALL)?;
+                }
+                let config = display::DrawConfig::new(
+                    self.config.width,
+                    self.config.height,
+                    w / 2
+                        - ((font::WIDTH[self.config.font] + 1) * self.config.width)
+                            * remaining.len() as u16
+                            / 2,
+                    h / 2
+                        - font::HEIGHT[self.config.font] * self.config.height
+                        - font::HEIGHT[self.config.font] * self.config.height / 2
+                        - 2,
+                    self.config.font,
+                    self.config.color,
+                );
+                d.show_time(&remaining, &config, self.out)?;
+            }
+            let formatted_time = self.time_formatter(Time::now());
+            d.show_time(&formatted_time, &config, self.out)?;
             self.out.flush()?;
             thread::sleep(Duration::from_nanos(
                 1_000_000_000 - chrono::Local::now().nanosecond() as u64,
@@ -69,6 +130,35 @@ impl<'a> Clock<'a> {
         }
 
         Ok(())
+    }
+
+    pub fn time_formatter(&mut self, time: Time) -> Vec<usize> {
+        if !self.config.use12_hour {
+            vec![
+                time.h / 10,
+                time.h % 10,
+                COLON,
+                time.m / 10,
+                time.m % 10,
+                COLON,
+                time.s / 10,
+                time.s % 10,
+            ]
+        } else {
+            vec![
+                time.pm_h.1 / 10,
+                time.pm_h.1 % 10,
+                COLON,
+                time.m / 10,
+                time.m % 10,
+                COLON,
+                time.s / 10,
+                time.s % 10,
+                SPACE,
+                if time.pm_h.0 { P } else { A },
+                M,
+            ]
+        }
     }
 }
 

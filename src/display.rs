@@ -1,43 +1,9 @@
+use anyhow::Result;
 use std::fmt::Write as _;
-use std::io::{self, Stdout, Write};
+use std::io::{Stdout, Write};
 use std::str::FromStr;
 
-use clap::Parser;
-
-use crate::clock;
 use crate::font;
-
-#[derive(Clone, Copy, Parser)]
-#[command(version, about, long_about = None)]
-pub struct Config {
-    /// The height of each tile.
-    #[arg(short = 'H', long, default_value_t = 1)]
-    pub height: u16,
-
-    /// The width of each tile.
-    #[arg(short = 'W', long, default_value_t = 2)]
-    pub width: u16,
-
-    /// The offset of x
-    #[arg(short, default_value_t = 0)]
-    pub x: u16,
-
-    /// The offset of y
-    #[arg(short, default_value_t = 0)]
-    pub y: u16,
-
-    /// Change to 12-hour clock
-    #[arg(long = "12")]
-    pub use12_hour: bool,
-
-    /// Choose the digit's font (0: 5x7, 1: 3x5)
-    #[arg(short, long, default_value_t = 0, value_parser = font::font_in_range)]
-    pub font: usize,
-
-    /// The tile's color
-    #[arg(short, long, default_value = "3")]
-    pub color: Color8,
-}
 
 // #[derive(Clone, Copy)]
 // pub struct ColorRGB {
@@ -93,112 +59,79 @@ impl std::fmt::Display for Move {
     }
 }
 
+pub struct DrawConfig {
+    pub width: u16,
+    pub height: u16,
+    pub x: u16,
+    pub y: u16,
+    pub font: usize,
+    pub color: Color8,
+}
+
+impl DrawConfig {
+    pub fn new(width: u16, height: u16, x: u16, y: u16, font: usize, color: Color8) -> Self {
+        Self {
+            width,
+            height,
+            x,
+            y,
+            font,
+            color,
+        }
+    }
+}
+
 pub struct Draw {
-    config: Config,
     buffer: String,
 }
 
-const COLON: usize = 10;
-const SPACE: usize = 11;
-const A: usize = 12;
-const P: usize = 13;
-const M: usize = 14;
-
 impl Draw {
-    pub fn new(config: Config) -> Self {
+    pub fn new() -> Self {
         Self {
             buffer: String::new(),
-            config,
         }
     }
 
-    /*
-    pub fn show_digit(&mut self, digit : &u64, width : u16, height : u16, out : & Stdout) -> io::Result<()> {
-        // let width = 5;
-        // let height = 7;
-
-        for y in 0..height {
+    pub fn show_time(&mut self, d: &Vec<usize>, config: &DrawConfig, out: &Stdout) -> Result<()> {
+        for y in 0..font::HEIGHT[config.font] {
             self.buffer.clear();
-            let mut mask = 1 << (width * (y + 1));
-            for _ in 0..width {
-                mask >>= 1;
-                self.write_buffer(Paint {
-                    color : if mask & digit > 0 {Color::C8(self.config.color)} else {Color::Reset},
-                    background : 48,
-                }).expect("Write Buffer Error");
-            }
-            self.render_buffer(self.config.x, self.config.y + y * self.config.height, out)?;
-            // println!("{}", buffer);
-        }
-        Ok(())
-    }
-    */
-
-    pub fn show_time(&mut self, time: clock::Time, out: &Stdout) -> io::Result<()> {
-        let d = if !self.config.use12_hour {
-            vec![
-                time.h / 10,
-                time.h % 10,
-                COLON,
-                time.m / 10,
-                time.m % 10,
-                COLON,
-                time.s / 10,
-                time.s % 10,
-            ]
-        } else {
-            vec![
-                time.pm_h.1 / 10,
-                time.pm_h.1 % 10,
-                COLON,
-                time.m / 10,
-                time.m % 10,
-                COLON,
-                time.s / 10,
-                time.s % 10,
-                SPACE,
-                if time.pm_h.0 { P } else { A },
-                M,
-            ]
-        };
-
-        for y in 0..font::HEIGHT[self.config.font] {
-            self.buffer.clear();
-            for digit in &d {
-                let mut mask = 1 << (font::WIDTH[self.config.font] * (y + 1));
-                for _ in 0..font::WIDTH[self.config.font] {
+            for digit in d {
+                let mut mask = 1 << (font::WIDTH[config.font] * (y + 1));
+                for _ in 0..font::WIDTH[config.font] {
                     mask >>= 1;
-                    self.write_buffer(Paint {
-                        color: if mask & font::DIGIT[self.config.font][*digit] > 0 {
-                            Color::C8(self.config.color)
-                        } else {
-                            Color::Reset
+                    self.write_buffer(
+                        config.width,
+                        Paint {
+                            color: if mask & font::DIGIT[config.font][*digit] > 0 {
+                                Color::C8(config.color)
+                            } else {
+                                Color::Reset
+                            },
+                            background: 48,
                         },
-                        background: 48,
-                    })
+                    )?;
                 }
-                self.write_buffer(Paint {
-                    color: Color::Reset,
-                    background: 48,
-                })
+                self.write_buffer(
+                    config.width,
+                    Paint {
+                        color: Color::Reset,
+                        background: 48,
+                    },
+                )?;
             }
-            self.render_buffer(self.config.x, self.config.y + y * self.config.height, out)?;
+            self.render_buffer(config.x, config.y + y * config.height, config.height, out)?;
             // println!("{}", buffer);
         }
         Ok(())
     }
 
-    fn write_buffer(&mut self, color: Paint) {
-        write!(
-            &mut self.buffer,
-            "{}{:2$}",
-            color, " ", self.config.width as usize
-        )
-        .expect("Error while writing into the buffer");
+    fn write_buffer(&mut self, width: u16, color: Paint) -> Result<()> {
+        write!(&mut self.buffer, "{}{:2$}", color, " ", width as usize)?;
+        Ok(())
     }
 
-    fn render_buffer(&self, x: u16, y: u16, mut out: &Stdout) -> io::Result<()> {
-        for i in 0..self.config.height {
+    fn render_buffer(&self, x: u16, y: u16, height: u16, mut out: &Stdout) -> Result<()> {
+        for i in 0..height {
             write!(out, "{}{}", Move { x, y: y + i }, self.buffer)?;
         }
         Ok(())

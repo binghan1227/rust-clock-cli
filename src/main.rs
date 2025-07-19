@@ -1,13 +1,19 @@
-use std::sync::{atomic::{ AtomicBool, Ordering }, Arc};
+use anyhow::Result;
 use clap::Parser;
 use std::io;
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
 
 mod clock;
+mod config;
+mod countdown;
 mod display;
 mod font;
 
-fn main() -> io::Result<()> {
-    let config = display::Config::parse();
+fn main() -> Result<()> {
+    let config = config::Config::parse();
 
     let stop = Arc::new(AtomicBool::new(false));
 
