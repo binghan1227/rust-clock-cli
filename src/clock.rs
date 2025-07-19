@@ -3,6 +3,7 @@ use std::io::{Error, Stdout, Write};
 use std::thread;
 use std::time::Duration;
 use terminal_size::{Height, Width, terminal_size};
+use std::sync::{atomic::{ AtomicBool, Ordering }, Arc};
 
 use crate::display;
 use crate::font::{self};
@@ -45,7 +46,7 @@ impl<'a> Clock<'a> {
         Ok(Clock { config, out })
     }
 
-    pub fn print_clock(&mut self) -> std::io::Result<()> {
+    pub fn print_clock(&mut self, stop: &Arc<AtomicBool>) -> std::io::Result<()> {
         let term_size = terminal_size();
         let Some((Width(w), Height(h))) = term_size else {
             panic!("Error while getting the terminal's size");
@@ -59,13 +60,15 @@ impl<'a> Clock<'a> {
             self.config.y + h / 2 - font::HEIGHT[self.config.font] * self.config.height / 2;
         let mut d = display::Draw::new(self.config);
 
-        loop {
+        while !stop.load(Ordering::SeqCst) {
             d.show_time(Time::now(), self.out)?;
             self.out.flush()?;
             thread::sleep(Duration::from_nanos(
                 1_000_000_000 - chrono::Local::now().nanosecond() as u64,
             ));
         }
+
+        Ok(())
     }
 }
 

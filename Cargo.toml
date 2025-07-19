@@ -8,3 +8,4 @@ description = "A command line clock written in Rust."
 chrono = "0.4"
 terminal_size = "0.4"
 clap = { version = "4.5", features = ["derive"] }
+ctrlc = "3.4"
