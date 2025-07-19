@@ -1,17 +1,20 @@
-use std::{io::{self, Write}};
+use std::io::{self, Write};
 
-use crate::clock::{print_clock};
+use crate::clock::print_clock;
 
-mod display;
+use clap::Parser;
+
 mod clock;
+mod display;
 mod font;
 
 const CLEAR_ALL: &str = "\x1B[2J";
 const HIDE: &str = "\x1B[?25l";
 
-
 fn main() -> io::Result<()> {
-    let mut stdout  = io::stdout();
+    let config = display::Config::parse();
+
+    let mut stdout = io::stdout();
     write!(stdout, "{}{}", CLEAR_ALL, HIDE)?;
 
     // println!("Start");
@@ -30,9 +33,7 @@ fn main() -> io::Result<()> {
     // }
 
     // test(&mut stdout)?;
-    print_clock(&mut stdout)?;
-
+    print_clock(config, &mut stdout)?;
 
     Ok(())
 }
-
