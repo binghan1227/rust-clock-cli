@@ -31,16 +31,19 @@ impl CD {
             let m = ((secs % 3600) / 60) as usize;
             let s = (secs % 60) as usize;
             let mut digits = Vec::new();
+
             if h > 0 {
                 digits.push(h / 10);
                 digits.push(h % 10);
                 digits.push(COLON);
             }
-            if m > 0 {
+
+            if h > 0 || m > 0 {
                 digits.push(m / 10);
                 digits.push(m % 10);
                 digits.push(COLON);
             }
+
             digits.push(s / 10);
             digits.push(s % 10);
             digits
