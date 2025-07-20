@@ -117,12 +117,13 @@ impl<'a> Clock<'a> {
                         countdown_args.width,
                         countdown_args.height,
                         w / 2
-                            - ((font::WIDTH[countdown_args.font] + 1) * self.config.width)
+                            - ((font::WIDTH[countdown_args.font] + 1)
+                                * countdown_args.width)
                                 * remaining.len() as u16
                                 / 2,
                         h / 2
-                            - font::HEIGHT[countdown_args.font] * self.config.height
-                            - font::HEIGHT[countdown_args.font] * self.config.height / 2
+                            - font::HEIGHT[countdown_args.font] * countdown_args.height
+                            - font::HEIGHT[countdown_args.font] * countdown_args.height / 2
                             - 2,
                         countdown_args.font,
                         countdown_args.color,
