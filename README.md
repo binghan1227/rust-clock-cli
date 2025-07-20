@@ -1,6 +1,6 @@
 # Rust Clock CLI
 
-[![GitHub release](https://img.shields.io/github/release/binghan1227/rust-clock-cli.svg)](https://github.com/binghan1227/rust-clock-cli/releases/latest)
+[![GitHub release](https://img.shields.io/github/release/binghan1227/rust-clock-cli)](https://github.com/binghan1227/rust-clock-cli/releases/latest)
 
 A simple, elegant, and highly customizable command-line clock written in Rust.
 
@@ -15,11 +15,21 @@ A simple, elegant, and highly customizable command-line clock written in Rust.
 
 ## Installation
 
+### Download pre-built binaries
+
+You can download the latest release for your platform from the [GitHub Releases page](https://github.com/binghan1227/rust-clock-cli/releases/latest).
+
+After downloading, make sure to give execute permissions (on macOS/Linux):
+
+```bash
+chmod +x rust-clock-cli-*
+```
+
 ### From source
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/binghan1227/rust-clock-cli.git](https://github.com/binghan1227/rust-clock-cli.git)
+    git clone https://github.com/binghan1227/rust-clock-cli.git
     cd rust-clock-cli
     ```
 
