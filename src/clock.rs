@@ -82,12 +82,13 @@ impl<'a> Clock<'a> {
             panic!("Error while getting the terminal's size");
         };
 
+        let f = font::FONTS[self.config.font];
         self.config.x = self.config.x + w / 2
-            - ((font::WIDTH[self.config.font] + 1) * self.config.width)
+            - ((f.width() + 1) * self.config.width)
                 * if self.config.use12_hour { 11 } else { 8 }
                 / 2;
         self.config.y =
-            self.config.y + h / 2 - font::HEIGHT[self.config.font] * self.config.height / 2;
+            self.config.y + h / 2 - f.height() * self.config.height / 2;
         let mut d = display::Draw::new();
         let config = display::DrawConfig::new(
             self.config.width,
@@ -113,17 +114,17 @@ impl<'a> Clock<'a> {
                 if let Some(countdown::CountdownCommands::Countdown(countdown_args)) =
                     self.config.countdown
                 {
+                    let cf = font::FONTS[countdown_args.font];
                     let countdown_config = display::DrawConfig::new(
                         countdown_args.width,
                         countdown_args.height,
                         w / 2
-                            - ((font::WIDTH[countdown_args.font] + 1)
-                                * countdown_args.width)
+                            - ((cf.width() + 1) * countdown_args.width)
                                 * remaining.len() as u16
                                 / 2,
                         h / 2
-                            - font::HEIGHT[countdown_args.font] * countdown_args.height
-                            - font::HEIGHT[countdown_args.font] * countdown_args.height / 2
+                            - cf.height() * countdown_args.height
+                            - cf.height() * countdown_args.height / 2
                             - 2,
                         countdown_args.font,
                         countdown_args.color,

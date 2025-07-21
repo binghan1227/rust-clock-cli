@@ -27,6 +27,12 @@ A simple, elegant, and highly customizable command-line clock written in Rust.
 * **Countdown Timer**: Start a countdown for a specific duration or to a target time.
 * **Cross-platform**: Works on Windows, macOS, and Linux.
 
+### Customizing Fonts
+
+Font definitions are located in `src/font.rs` as simple structures containing
+width, height, and the bitmap data. New fonts can be added by appending a new
+`Font` entry to the `FONTS` array.
+
 ## Installation
 
 ### Download pre-built binaries

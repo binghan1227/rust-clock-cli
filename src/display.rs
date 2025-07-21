@@ -93,16 +93,17 @@ impl Draw {
     }
 
     pub fn show_time(&mut self, d: &Vec<usize>, config: &DrawConfig, out: &Stdout) -> Result<()> {
-        for y in 0..font::HEIGHT[config.font] {
+        let f = font::FONTS[config.font];
+        for y in 0..f.height() {
             self.buffer.clear();
             for digit in d {
-                let mut mask = 1 << (font::WIDTH[config.font] * (y + 1));
-                for _ in 0..font::WIDTH[config.font] {
+                let mut mask: u64 = 1 << (f.width() * (y + 1));
+                for _ in 0..f.width() {
                     mask >>= 1;
                     self.write_buffer(
                         config.width,
                         Paint {
-                            color: if mask & font::DIGIT[config.font][*digit] > 0 {
+                            color: if mask & f.digit(*digit) > 0 {
                                 Color::C8(config.color)
                             } else {
                                 Color::Reset

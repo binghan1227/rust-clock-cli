@@ -3,9 +3,6 @@ use std::ops::RangeInclusive;
 
 pub const FONT_TOTAL: usize = 2;
 
-pub const WIDTH: [u16; FONT_TOTAL] = [5, 3];
-pub const HEIGHT: [u16; FONT_TOTAL] = [7, 5];
-
 // .***. ..*.. .***. .***. ...*. ***** ...*. ***** .***. .***. ..... ..*.. ****. .*.*.
 // *...* .**.. *...* *...* ..**. *.... ..*.. ....* *...* *...* ..*.. .*.*. *...* *.*.*
 // *...* *.*.. ...*. ....* .*.*. *.... .*... ....* *...* *...* ..*.. .*.*. *...* *.*.*
@@ -20,8 +17,40 @@ pub const HEIGHT: [u16; FONT_TOTAL] = [7, 5];
 // *.* .*. *.. ..* ..* ..* *.* ..* *.* ..* .*. *.* *.. *.*
 // *** .*. *** *** ..* *** *** ..* *** *** ... *.* *.. *.*
 
-pub const DIGIT: [[u64; 15]; FONT_TOTAL] = [
-    [
+#[derive(Clone, Copy)]
+pub enum FontData {
+    U64([u64; 15]),
+    U16([u16; 15]),
+}
+
+#[derive(Clone, Copy)]
+pub struct Font {
+    pub width: u16,
+    pub height: u16,
+    pub data: FontData,
+}
+
+impl Font {
+    pub const fn width(&self) -> u16 {
+        self.width
+    }
+
+    pub const fn height(&self) -> u16 {
+        self.height
+    }
+
+    pub const fn digit(&self, idx: usize) -> u64 {
+        match self.data {
+            FontData::U64(d) => d[idx],
+            FontData::U16(d) => d[idx] as u64,
+        }
+    }
+}
+
+pub const FONT_5X7: Font = Font {
+    width: 5,
+    height: 7,
+    data: FontData::U64([
         0b01110_10001_10001_10001_10001_10001_01110,
         0b11111_00100_00100_00100_10100_01100_00100,
         0b11111_10000_01000_00100_00010_10001_01110,
@@ -37,8 +66,13 @@ pub const DIGIT: [[u64; 15]; FONT_TOTAL] = [
         0b10001_10001_10001_11111_01010_01010_00100,
         0b10000_10000_10000_11110_10001_10001_11110,
         0b10001_10001_10001_10101_10101_10101_01010,
-    ],
-    [
+    ]),
+};
+
+pub const FONT_3X5: Font = Font {
+    width: 3,
+    height: 5,
+    data: FontData::U16([
         0b111_101_101_101_111,
         0b010_010_010_010_010,
         0b111_100_111_001_111,
@@ -54,8 +88,10 @@ pub const DIGIT: [[u64; 15]; FONT_TOTAL] = [
         0b101_101_111_101_010,
         0b100_100_111_101_111,
         0b101_101_101_111_101,
-    ],
-];
+    ]),
+};
+
+pub const FONTS: [&Font; FONT_TOTAL] = [&FONT_5X7, &FONT_3X5];
 
 const FONT_RANGE: RangeInclusive<usize> = 0..=FONT_TOTAL - 1;
 
