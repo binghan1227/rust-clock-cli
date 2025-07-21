@@ -4,6 +4,20 @@
 
 A simple, elegant, and highly customizable command-line clock written in Rust.
 
+## Screenshots
+
+| Default | 12-Hour Mode |
+| :---: | :---: |
+| ![Default View](resource/default.png) | ![12-Hour View](resource/12-hour.png) |
+
+| Font Change | Color Change |
+| :---: | :---: |
+| ![Font Change](resource/change_font.png) | ![Color Change](resource/change_color.png) |
+
+|Size Change | Countdown |
+| :---: | :---: |
+| ![Size Change](resource/change_size.png) | ![Countdown](resource/countdown.png) |
+
 
 ## Features
 
