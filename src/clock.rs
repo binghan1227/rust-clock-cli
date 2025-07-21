@@ -123,7 +123,7 @@ impl<'a> Clock<'a> {
                                 / 2,
                         h / 2
                             - font::HEIGHT[countdown_args.font] * countdown_args.height
-                            - font::HEIGHT[countdown_args.font] * countdown_args.height / 2
+                            - font::HEIGHT[self.config.font] * self.config.height / 2
                             - 2,
                         countdown_args.font,
                         countdown_args.color,
